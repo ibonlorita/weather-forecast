@@ -1,8 +1,13 @@
-const HomePage = () => {
+const HomePage: React.FC = () => {
+  import { Provider } from 'react-redux'
+  import { store } from '../store'
+
+  
   return (
-    <div>
-      123
-    </div>
+    <Provider store={store}> 
+      <div>
+      </div>
+    </Provider>
   )
 }
 

@@ -1,6 +1,6 @@
 import { City } from "../types/weather";
 
-export const CITYES: City[] = [
+export const CITIES: City[] = [
   {id: 'taipei', name: '台北', displayName: '台北市'},
   {id: 'newTaipei', name: '新北', displayName: '新北市'},
   {id: 'taoyuan', name: '桃園', displayName: '桃園市'},

@@ -87,8 +87,8 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
     // 計算溫度與濕度，確認 currentWeather 存在
     const comfortLevel = getComfortLevel(currentWeather.temperature, currentWeather.humidity)
     
-    // 定義 DetailItem 資料結構
-    const weatherDetails = [
+    // 定義 DetailItem內 資料結構
+    const weatherInfo = [
       { label: '體感', value: comfortLevel },
       { label: '濕度', value: currentWeather.humidity, unit: '%' },
       { label: '風速', value: currentWeather.windSpeed, unit: ' m/s' },
@@ -109,7 +109,7 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
 
         <div className={styles.weatherDetails}>
 
-          {weatherDetails.map((item, idx) => (
+          {weatherInfo.map((item, idx) => (
             <DetailItem
               key={idx}
               label={item.label}

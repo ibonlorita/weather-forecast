@@ -22,7 +22,7 @@ app.get('/api/weather', async (req, res) => {
     }
 
     const API_KEY =
-      process.env.CWA_API_KEY || 'CWA-0DBA632D-C3AA-48D6-A219-6E8CFB729F06';
+      process.env.CWA_API_KEY || 'CWA-4AA1B522-C0F7-4BD7-9F6E-5205915A438F';
     const BASE_URL = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore';
 
     const endpoint = type === 'forecast' ? 'F-D0047-091' : 'F-C0032-001';

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocalStorage } from '../../hooks/useLocalStorage'
 import { CITIES } from '../../utils/constants'
+import Dropdown from './Dropdwon'
 import styles from './CitySelector.module.scss' 
 
 interface CitySelectorProps {
@@ -17,13 +18,15 @@ const CitySelector = ({ selectedCity, onCityChange, showHistory = false }: CityS
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   // 搜尋歷史
   const [searchHistory, setSearchHistory] =useLocalStorage<string[]>('city-search-history', [])
-  // 過濾城市
+  // 根據搜尋關鍵字過濾城市列表
   const filteredCities = CITIES.filter( city => 
     city.displayName.includes(searchTerm) || city.name.includes(searchTerm)
   )
 
-  // 城市的選擇（事件處理）
+  // 城市的選擇邏輯（事件處理）
   const handleCitySelect = (cityName: string) => {
+    console.log('handleCitySelect', cityName) // 測試用
+
     onCityChange(cityName) 
     setIsDropdownOpen(false)
     setSearchTerm('') // 清空搜尋關鍵字
@@ -45,15 +48,18 @@ const CitySelector = ({ selectedCity, onCityChange, showHistory = false }: CityS
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element
+      // 檢查點擊是否發生在元件容器外
       if (!target.closest(`.${styles.container}`)) {
         setIsDropdownOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside) // 綁定事件
-    return () => document.removeEventListener('mousedown', handleClickOutside) // 清理事件
+    // 綁定滑鼠按下事件監聽
+    document.addEventListener('mousedown', handleClickOutside) 
+    // 移除事件監聽避免記憶體洩漏（清理函數）
+    return () => document.removeEventListener('mousedown', handleClickOutside) 
   }, []) 
 
-  // 當前城市顯示邏輯
+  // 當前城市的顯示名稱
   const currentCityDisplay = CITIES.find(city => city.name === selectedCity)?.displayName || selectedCity
   
   
@@ -77,76 +83,15 @@ const CitySelector = ({ selectedCity, onCityChange, showHistory = false }: CityS
       </div>
       
       {/* 下拉選單 */}
-      {isDropdownOpen && (
-        <div className={styles.dropdown}>
-          {
-            filteredCities.length > 0 && (
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>城市是列表</div>
-                {
-                  filteredCities.map(city => (
-                    <div 
-                      key={city.id}
-                      className={`${styles.cityItem} ${
-                        city.name === selectedCity ? styles.selected : ''
-                      }`}
-                      onClick={() => handleCitySelect(city.name)}
-                    >
-                      <span className={styles.cityName}>{city.displayName}</span>
-                      <span className={styles.cityCode}>{city.name}</span>
-                    </div>
-                  ))
-                }
-              </div>
-            )}
-
-            {/* 搜尋歷史 */}
-            {
-              showHistory && searchHistory.length > 0 && searchTerm === '' && (
-                <div className={styles.section}>
-                  <div className={styles.sectionTitle}>搜尋歷史</div>
-                  {
-                    searchHistory.map((cityName, idx) => {
-                      const cityInfo = CITIES.find(city => city.name === cityName)
-                      return (
-                        <div
-                          key={`${cityName}-$`}                        
-                          className={`${styles.cityItem} ${styles.historyItem}`}
-                          onClick={() => handleCitySelect(cityName)}
-                        >
-                          <span className={styles.cityName}>
-                            {cityInfo?.displayName || cityName}
-                          </span>
-                          <span className={styles.historyTag}>歷史</span>
-                        </div>
-                      )
-                    })
-                  }
-                  
-                  {/* 快速選擇按鈕 */}
-                  <div className={styles.quickSelect}>
-                    <div className={styles.quickTitle}>快速選擇</div>
-                    <div className={styles.quickButtons}>
-                      {
-                        CITIES.slice(0, 6).map( city => (
-                          <button
-                            key={city.id}
-                            className={`${styles.quickButton} ${
-                              city.name === selectedCity ? styles.active : ''
-                            }`}
-                            onClick={() => handleCitySelect(city.name)}
-                          >
-                            {city.displayName}
-                          </button>
-                        ))
-                      }
-                    </div>
-                  </div>
-                </div>
-              )
-            }
-        </div>
-      )}
+      <Dropdown 
+        isOpen={isDropdownOpen}
+        filteredCities={filteredCities}
+        selectedCity={selectedCity}
+        searchTerm={searchTerm}
+        showHistory={showHistory}
+        searchHistory={searchHistory}
+        onCitySelect={handleCitySelect}
+      />
     </div>
   )
 }

@@ -9,7 +9,7 @@ import './App.scss'
 
 const App: React.FC = () => {
   
-  const [selectedCity, setSelectedCity] = useLocalStorage<string>('selected-city', '臺北市')
+  const [selectedCity, setSelectedCity] = useLocalStorage<string>('selected-city', '台北')
   
   // 管理檢視模式：即時天氣 vs 5日預報
   const [viewMode, setViewMode] = useState<'current' | 'forecast'>('current')

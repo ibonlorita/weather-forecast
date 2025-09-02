@@ -7,6 +7,7 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
+  z-index: 100; // 確保容器有足夠的 z-index
 }
 
 .title {
@@ -21,6 +22,7 @@
 .searchBox {
   position: relative;
   margin-bottom: 1.5rem;
+  z-index: 200; // 搜尋框的 z-index
 }
 
 .searchInput {
@@ -54,7 +56,7 @@
   pointer-events: none;
 }
 
-// 下拉選單
+// 下拉選單 - 修復 z-index 問題
 .dropdown {
   position: absolute;
   top: 100%;
@@ -66,9 +68,11 @@
   backdrop-filter: blur(20px);
   max-height: 300px;
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 9999; // 大幅提高 z-index，確保在最上層
   margin-top: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.3);
+  // 確保下拉選單不會被截斷
+  overflow: visible;
 }
 
 .section {
@@ -182,9 +186,15 @@
 
 // 響應式
 @media (max-width: 768px) {
-  .container { padding: 1rem; }
+  .container { 
+    padding: 1rem; 
+    z-index: 150; // 手機版提高 z-index
+  }
   .quickButtons { grid-template-columns: repeat(2, 1fr); }
-  .dropdown { max-height: 250px; }
+  .dropdown { 
+    max-height: 250px; 
+    z-index: 9999; // 確保手機版也有足夠的 z-index
+  }
 }
 
 // 滾動條

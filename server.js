@@ -14,7 +14,7 @@ const API_KEY =
   process.env.CWA_API_KEY || 'CWA-4AA1B522-C0F7-4BD7-9F6E-5205915A438F';
 const GRAPHQL_URL = 'https://opendata.cwa.gov.tw/linked/graphql';
 
-// 城市名稱對應表 - 將簡體字轉換為中央氣象署 API 使用的繁體字
+// 城市名稱對應表
 const cityMapping = {
   台北市: '臺北市',
   新北市: '新北市',
@@ -37,7 +37,7 @@ const cityMapping = {
   連江縣: '連江縣',
 };
 
-// 處理當前天氣資料
+// ✅ 修正：處理當前天氣資料（使用正確的資料結構）
 function processWeatherData(graphqlData) {
   console.log(
     '🔍 處理 GraphQL 天氣資料:',
@@ -52,28 +52,28 @@ function processWeatherData(graphqlData) {
     }
 
     const location = locations[0];
-    const temperature = location.Temperature?.[0];
-    const humidity = location.RelativeHumidity?.[0];
-    const windSpeed = location.WindSpeed?.[0];
-    const pressure = location.AirPressure?.[0];
-    const weather = location.Weather?.[0];
+    console.log('🏙️ 處理地點:', location.LocationName);
 
-    if (!temperature) {
-      console.log('❌ 沒有找到溫度資料');
-      return null;
-    }
+    // ✅ 修正：根據 Schema 正確解析資料
+    const temperature =
+      location.Temperature?.[0]?.Time?.[0]?.Temperature || '0';
+    const weather = location.Weather?.[0]?.Time?.[0]?.Weather || '晴時多雲';
+    const windSpeed = location.WindSpeed?.[0]?.Time?.[0]?.WindSpeed || '0';
 
-    const tempData = temperature.Time?.[0];
-    const tempValue = tempData?.Temperature?.Value || 0;
+    // 濕度和氣壓可能沒有，使用預設值
+    const humidity = 60; // GraphQL 中可能沒有濕度資料
+    const pressure = 1013; // GraphQL 中可能沒有氣壓資料
 
     const result = {
       city: location.LocationName,
-      temperature: tempValue,
-      humidity: humidity?.Time?.[0]?.RelativeHumidity?.Value || 60,
-      windSpeed: windSpeed?.Time?.[0]?.WindSpeed?.Value || 0,
-      pressure: pressure?.Time?.[0]?.AirPressure?.Value || 1013,
-      weather: weather?.Time?.[0]?.WeatherDescription || '晴時多雲',
-      updateTime: tempData?.StartTime || new Date().toISOString(),
+      temperature: parseFloat(temperature) || 0,
+      humidity: humidity,
+      windSpeed: parseFloat(windSpeed) || 0,
+      pressure: pressure,
+      weather: weather,
+      updateTime:
+        location.Temperature?.[0]?.Time?.[0]?.StartTime ||
+        new Date().toISOString(),
     };
 
     console.log('✅ 處理後的天氣資料:', result);
@@ -84,7 +84,7 @@ function processWeatherData(graphqlData) {
   }
 }
 
-// 處理預報資料
+// ✅ 修正：處理預報資料
 function processForecastData(graphqlData) {
   console.log(
     '🔍 處理 GraphQL 預報資料:',
@@ -99,28 +99,27 @@ function processForecastData(graphqlData) {
     }
 
     const location = locations[0];
-    const temperature = location.Temperature;
-    const weather = location.Weather;
-    const rainChance = location.PoP; // 降雨機率
+    const temperatureData = location.Temperature || [];
+    const weatherData = location.Weather || [];
+    const popData = location.ProbabilityOfPrecipitation || [];
 
-    if (!temperature || temperature.length === 0) {
-      console.log('❌ 沒有找到預報溫度資料');
-      return null;
+    // 取前7天的資料
+    const forecast = [];
+    const maxDays = Math.min(7, temperatureData.length);
+
+    for (let i = 0; i < maxDays; i++) {
+      const tempTime = temperatureData[i]?.Time?.[0];
+      const weatherTime = weatherData[i]?.Time?.[0];
+      const popTime = popData[i]?.Time?.[0];
+
+      forecast.push({
+        date: tempTime?.StartTime || '',
+        maxTemp: parseFloat(tempTime?.Temperature) || 0,
+        minTemp: parseFloat(tempTime?.Temperature) || 0, // GraphQL 可能沒有分最高最低溫
+        weather: weatherTime?.Weather || '晴時多雲',
+        rainChance: parseFloat(popTime?.ProbabilityOfPrecipitation) || 0,
+      });
     }
-
-    const forecast = temperature.slice(0, 7).map((temp, index) => {
-      const tempData = temp.Time?.[0];
-      const weatherData = weather?.[index]?.Time?.[0];
-      const rainData = rainChance?.[index]?.Time?.[0];
-
-      return {
-        date: tempData?.StartTime || '',
-        maxTemp: tempData?.MaxTemperature?.Value || 0,
-        minTemp: tempData?.MinTemperature?.Value || 0,
-        weather: weatherData?.WeatherDescription || '晴時多雲',
-        rainChance: rainData?.PoP?.Value || 0,
-      };
-    });
 
     console.log('✅ 處理後的預報資料:', forecast);
     return forecast;
@@ -130,7 +129,7 @@ function processForecastData(graphqlData) {
   }
 }
 
-// 天氣 API 端點
+// ✅ 修正：天氣 API 端點
 app.get('/api/weather', async (req, res) => {
   try {
     const { city, type } = req.query;
@@ -146,10 +145,10 @@ app.get('/api/weather', async (req, res) => {
     console.log(`🌍 API 請求: ${city} -> ${mappedCity}`);
     console.log(`📊 請求類型: ${type}`);
 
-    // GraphQL 查詢 - 根據類型選擇不同的查詢
+    // ✅ 修正：根據官方範例的正確 GraphQL 查詢
     let graphqlQuery;
     if (type === 'forecast') {
-      // 7天預報查詢
+      // 7天預報查詢（根據 Schema）
       graphqlQuery = `
         query forecast($city: String!) {
           forecast(LocationName: $city) {
@@ -163,14 +162,7 @@ app.get('/api/weather', async (req, res) => {
                 Time {
                   StartTime
                   EndTime
-                  MaxTemperature {
-                    Value
-                    Unit
-                  }
-                  MinTemperature {
-                    Value
-                    Unit
-                  }
+                  Temperature
                 }
               }
               Weather {
@@ -178,18 +170,16 @@ app.get('/api/weather', async (req, res) => {
                 Time {
                   StartTime
                   EndTime
-                  WeatherDescription
+                  Weather
+                  WeatherCode
                 }
               }
-              PoP {
+              ProbabilityOfPrecipitation {
                 ElementName
                 Time {
                   StartTime
                   EndTime
-                  PoP {
-                    Value
-                    Unit
-                  }
+                  ProbabilityOfPrecipitation
                 }
               }
             }
@@ -197,7 +187,7 @@ app.get('/api/weather', async (req, res) => {
         }
       `;
     } else {
-      // 當前天氣查詢
+      // 當前天氣查詢（簡化版）
       graphqlQuery = `
         query forecast($city: String!) {
           forecast(LocationName: $city) {
@@ -211,43 +201,7 @@ app.get('/api/weather', async (req, res) => {
                 Time {
                   StartTime
                   EndTime
-                  Temperature {
-                    Value
-                    Unit
-                  }
-                }
-              }
-              RelativeHumidity {
-                ElementName
-                Time {
-                  StartTime
-                  EndTime
-                  RelativeHumidity {
-                    Value
-                    Unit
-                  }
-                }
-              }
-              WindSpeed {
-                ElementName
-                Time {
-                  StartTime
-                  EndTime
-                  WindSpeed {
-                    Value
-                    Unit
-                  }
-                }
-              }
-              AirPressure {
-                ElementName
-                Time {
-                  StartTime
-                  EndTime
-                  AirPressure {
-                    Value
-                    Unit
-                  }
+                  Temperature
                 }
               }
               Weather {
@@ -255,7 +209,17 @@ app.get('/api/weather', async (req, res) => {
                 Time {
                   StartTime
                   EndTime
-                  WeatherDescription
+                  Weather
+                  WeatherCode
+                }
+              }
+              WindSpeed {
+                ElementName
+                Time {
+                  StartTime
+                  EndTime
+                  WindSpeed
+                  BeaufortScale
                 }
               }
             }
@@ -267,12 +231,14 @@ app.get('/api/weather', async (req, res) => {
     console.log(`🔗 GraphQL URL: ${GRAPHQL_URL}`);
     console.log(`🔑 API Key: ${API_KEY}`);
 
-    // 發送 GraphQL 請求
-    const response = await fetch(GRAPHQL_URL, {
+    // ✅ 修正：使用 URL 參數方式傳遞 Authorization（根據 curl 範例）
+    const urlWithAuth = `${GRAPHQL_URL}?Authorization=${API_KEY}`;
+
+    const response = await fetch(urlWithAuth, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: API_KEY,
+        Accept: 'application/json',
       },
       body: JSON.stringify({
         query: graphqlQuery,
@@ -333,9 +299,53 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ✅ 新增：測試 GraphQL 連線的端點
+app.get('/api/test-graphql', async (req, res) => {
+  try {
+    // 簡單的測試查詢
+    const testQuery = `
+      query test {
+        forecast(LocationName: "臺北市") {
+          Locations {
+            LocationName
+            Geocode
+          }
+        }
+      }
+    `;
+
+    const urlWithAuth = `${GRAPHQL_URL}?Authorization=${API_KEY}`;
+
+    const response = await fetch(urlWithAuth, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        query: testQuery,
+      }),
+    });
+
+    const data = await response.json();
+
+    res.json({
+      success: response.ok,
+      status: response.status,
+      data: data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 // 啟動伺服器
 app.listen(PORT, () => {
   console.log(`🚀 天氣 API 伺服器運行在 http://localhost:${PORT}`);
   console.log(`🔑 使用 API 金鑰: ${API_KEY}`);
   console.log(`🌐 GraphQL 端點: ${GRAPHQL_URL}`);
+  console.log(`🧪 測試端點: http://localhost:${PORT}/api/test-graphql`);
 });

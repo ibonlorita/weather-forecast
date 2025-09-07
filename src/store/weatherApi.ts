@@ -3,12 +3,16 @@ import type { WeatherData, ForecastData, ApiResponse } from '../types/weather'
 
 // 根據環境自動選擇 API 基礎 URL
 const getBaseUrl = () => {
+  console.log('🔧 NODE_ENV:', process.env.NODE_ENV)
+  console.log('🔧 REACT_APP_API_URL:', process.env.REACT_APP_API_URL)
   // 本地開發環境
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:3001/api'
   }
-  // 生產環境（GitHub Pages）
-  return process.env.REACT_APP_API_URL + '/api' || 'https://weather-forecast-g4ss.onrender.com/api'
+   // 生產環境 - 使用環境變數
+   const apiUrl = process.env.REACT_APP_API_URL || 'https://weather-forecast-g4ss.onrender.com'
+   console.log('🌐 生產環境 API URL:', apiUrl) // 除錯用
+   return `${apiUrl}/api`
 }
 
 export const weatherApi = createApi({

@@ -1,5 +1,5 @@
 import { CITIES } from '../../utils/constants'
-import styles from './Dropdown.module.scss'
+import styles from './CitySelector.module.scss'
 
 // 城市資料
 interface CityData {

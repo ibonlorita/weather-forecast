@@ -10,7 +10,9 @@
     "eject": "react-scripts eject",
     "server": "node server.js",
     "dev": "concurrently \"npm run server\" \"npm start\"",
-    "server:prod": "NODE_ENV=production node server.js"
+    "server:prod": "NODE_ENV=production node server.js",
+    "deploy": "gh-pages -d build",
+    "predeploy": "npm run build"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.9.7",

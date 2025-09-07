@@ -8,7 +8,7 @@ const getBaseUrl = () => {
     return 'http://localhost:3001/api'
   }
   // 生產環境（GitHub Pages）
-  return '/api'
+  return process.env.REACT_APP_API_URL + '/api' || 'https://weather-forecast-g4ss.onrender.com/api'
 }
 
 export const weatherApi = createApi({

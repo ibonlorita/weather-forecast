@@ -9,13 +9,13 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "server": "node server.js",
-    "dev": "concurrently \"npm run server\" \"npm run start\"",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "dev": "concurrently \"npm run server\" \"npm start\"",
+    "server:prod": "NODE_ENV=production node server.js"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.9.7",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
     "express": "^4.21.2",
     "node-fetch": "^2.7.0",
     "react": "^18.2.0",

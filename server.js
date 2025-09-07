@@ -1,13 +1,45 @@
+// server.js - 修正版本（適用於 GitHub Pages + Render 部署）
+
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
-// 啟用 CORS
-app.use(cors());
+// ✅ 修正：設定正確的 CORS
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://ibonlorita.github.io', // 你的 GitHub Pages 網域
+    'https://weather-forecast-ibonlorita.pages.dev', // 如果使用 Cloudflare Pages
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// 額外的 CORS 處理中介軟體
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (corsOptions.origin.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
 
 // 中央氣象局 GraphQL API 設定
 const API_KEY =
@@ -37,12 +69,9 @@ const cityMapping = {
   連江縣: '連江縣',
 };
 
-// ✅ 修正：處理當前天氣資料（使用正確的資料結構）
+// 處理當前天氣資料
 function processWeatherData(graphqlData) {
-  console.log(
-    '🔍 處理 GraphQL 天氣資料:',
-    JSON.stringify(graphqlData, null, 2)
-  );
+  console.log('🔍 處理 GraphQL 天氣資料');
 
   try {
     const locations = graphqlData?.data?.forecast?.Locations;
@@ -54,15 +83,13 @@ function processWeatherData(graphqlData) {
     const location = locations[0];
     console.log('🏙️ 處理地點:', location.LocationName);
 
-    // ✅ 修正：根據 Schema 正確解析資料
     const temperature =
       location.Temperature?.[0]?.Time?.[0]?.Temperature || '0';
     const weather = location.Weather?.[0]?.Time?.[0]?.Weather || '晴時多雲';
     const windSpeed = location.WindSpeed?.[0]?.Time?.[0]?.WindSpeed || '0';
 
-    // 濕度和氣壓可能沒有，使用預設值
-    const humidity = 60; // GraphQL 中可能沒有濕度資料
-    const pressure = 1013; // GraphQL 中可能沒有氣壓資料
+    const humidity = 60;
+    const pressure = 1013;
 
     const result = {
       city: location.LocationName,
@@ -84,12 +111,9 @@ function processWeatherData(graphqlData) {
   }
 }
 
-// ✅ 修正：處理預報資料
+// 處理預報資料
 function processForecastData(graphqlData) {
-  console.log(
-    '🔍 處理 GraphQL 預報資料:',
-    JSON.stringify(graphqlData, null, 2)
-  );
+  console.log('🔍 處理 GraphQL 預報資料');
 
   try {
     const locations = graphqlData?.data?.forecast?.Locations;
@@ -103,7 +127,6 @@ function processForecastData(graphqlData) {
     const weatherData = location.Weather || [];
     const popData = location.ProbabilityOfPrecipitation || [];
 
-    // 取前7天的資料
     const forecast = [];
     const maxDays = Math.min(7, temperatureData.length);
 
@@ -115,7 +138,7 @@ function processForecastData(graphqlData) {
       forecast.push({
         date: tempTime?.StartTime || '',
         maxTemp: parseFloat(tempTime?.Temperature) || 0,
-        minTemp: parseFloat(tempTime?.Temperature) || 0, // GraphQL 可能沒有分最高最低溫
+        minTemp: parseFloat(tempTime?.Temperature) || 0,
         weather: weatherTime?.Weather || '晴時多雲',
         rainChance: parseFloat(popTime?.ProbabilityOfPrecipitation) || 0,
       });
@@ -129,7 +152,7 @@ function processForecastData(graphqlData) {
   }
 }
 
-// ✅ 修正：天氣 API 端點
+// 天氣 API 端點
 app.get('/api/weather', async (req, res) => {
   try {
     const { city, type } = req.query;
@@ -145,10 +168,8 @@ app.get('/api/weather', async (req, res) => {
     console.log(`🌍 API 請求: ${city} -> ${mappedCity}`);
     console.log(`📊 請求類型: ${type}`);
 
-    // ✅ 修正：根據官方範例的正確 GraphQL 查詢
     let graphqlQuery;
     if (type === 'forecast') {
-      // 7天預報查詢（根據 Schema）
       graphqlQuery = `
         query forecast($city: String!) {
           forecast(LocationName: $city) {
@@ -187,7 +208,6 @@ app.get('/api/weather', async (req, res) => {
         }
       `;
     } else {
-      // 當前天氣查詢（簡化版）
       graphqlQuery = `
         query forecast($city: String!) {
           forecast(LocationName: $city) {
@@ -228,10 +248,6 @@ app.get('/api/weather', async (req, res) => {
       `;
     }
 
-    console.log(`🔗 GraphQL URL: ${GRAPHQL_URL}`);
-    console.log(`🔑 API Key: ${API_KEY}`);
-
-    // ✅ 修正：使用 URL 參數方式傳遞 Authorization（根據 curl 範例）
     const urlWithAuth = `${GRAPHQL_URL}?Authorization=${API_KEY}`;
 
     const response = await fetch(urlWithAuth, {
@@ -251,7 +267,6 @@ app.get('/api/weather', async (req, res) => {
     }
 
     const data = await response.json();
-    console.log('📡 GraphQL 回應:', JSON.stringify(data, null, 2));
 
     if (data.errors) {
       console.error('❌ GraphQL 錯誤:', data.errors);
@@ -296,56 +311,29 @@ app.get('/api/health', (req, res) => {
     success: true,
     message: '天氣 API 服務正常運行',
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    cors_origins: corsOptions.origin,
   });
 });
 
-// ✅ 新增：測試 GraphQL 連線的端點
-app.get('/api/test-graphql', async (req, res) => {
-  try {
-    // 簡單的測試查詢
-    const testQuery = `
-      query test {
-        forecast(LocationName: "臺北市") {
-          Locations {
-            LocationName
-            Geocode
-          }
-        }
-      }
-    `;
-
-    const urlWithAuth = `${GRAPHQL_URL}?Authorization=${API_KEY}`;
-
-    const response = await fetch(urlWithAuth, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        query: testQuery,
-      }),
-    });
-
-    const data = await response.json();
-
-    res.json({
-      success: response.ok,
-      status: response.status,
-      data: data,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
+// 根路徑
+app.get('/', (req, res) => {
+  res.json({
+    message: '🌤️ 台灣天氣預報 API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      weather: '/api/weather?city=臺北市',
+      forecast: '/api/weather?city=臺北市&type=forecast',
+    },
+    frontend: 'https://ibonlorita.github.io/weather-forecast/',
+  });
 });
 
 // 啟動伺服器
 app.listen(PORT, () => {
-  console.log(`🚀 天氣 API 伺服器運行在 http://localhost:${PORT}`);
+  console.log(`🚀 天氣 API 伺服器運行在 port ${PORT}`);
   console.log(`🔑 使用 API 金鑰: ${API_KEY}`);
   console.log(`🌐 GraphQL 端點: ${GRAPHQL_URL}`);
-  console.log(`🧪 測試端點: http://localhost:${PORT}/api/test-graphql`);
+  console.log(`🔒 CORS 允許的來源:`, corsOptions.origin);
 });

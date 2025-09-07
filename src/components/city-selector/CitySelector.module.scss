@@ -59,7 +59,7 @@
   pointer-events: none;
 }
 
-// 下拉選單 - 修復 z-index 問題
+// 下拉選單 - 修復 z-index 問題 -
 .dropdown {
   position: absolute;
   top: 100%;
@@ -79,8 +79,8 @@
   visibility: visible !important; // 強制可見
   opacity: 1 !important; // 強制不透明
   /* 強制顯示的樣式 */
-  min-height: 50px;
-  width: 100%;
+  min-height: 50px !important;
+  width: 100% !important;
 }
 
 .section {

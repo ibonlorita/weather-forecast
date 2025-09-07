@@ -9,6 +9,6 @@
 - **前端框架**: React 18 + TypeScript
 - **狀態管理**: Redux Toolkit + RTK Query
 - **樣式設計**: SCSS + CSS Modules
-- **API 代理**: Express.js 後端服務
+- **API 代理**: server.js 後端服務
 - **部署平台**: GitHub Pages
 - **開發工具**: Create React App

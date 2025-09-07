@@ -59,29 +59,7 @@
   pointer-events: none;
 }
 
-// 下拉選單 - 修復 z-index 問題 -
-.dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(20px);
-  max-height: 300px;
-  overflow-y: auto;
-  overflow-x: hidden; // 防止水平溢出
-  z-index: 9999; // 大幅提高 z-index，確保在最上層
-  margin-top: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  display: block !important; // 強制顯示
-  visibility: visible !important; // 強制可見
-  opacity: 1 !important; // 強制不透明
-  /* 強制顯示的樣式 */
-  min-height: 50px !important;
-  width: 100% !important;
-}
+
 
 .section {
   padding: 0.5rem 0;
@@ -200,13 +178,4 @@
     z-index: 150; // 手機版提高 z-index
   }
   .quickButtons { grid-template-columns: repeat(2, 1fr); }
-  .dropdown { 
-    max-height: 250px; 
-    z-index: 9999; // 確保手機版也有足夠的 z-index
-  }
 }
-
-// 滾動條
-.dropdown::-webkit-scrollbar { width: 6px; }
-.dropdown::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); }
-.dropdown::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); }
